@@ -1,12 +1,86 @@
-# React + Vite
+# Mermaid Visualizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A beautiful React application for creating and visualizing Mermaid diagrams with an interactive editor and real-time preview.
 
-Currently, two official plugins are available:
+![Mermaid Visualizer Screenshot](https://github.com/user-attachments/assets/4e8841cc-b850-40d8-94dc-827bb61c5b40)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- **Interactive Code Editor**: Real-time editing of Mermaid diagram code
+- **Live Preview**: Instant diagram rendering with error handling
+- **Template Library**: Quick start with Flowchart, Sequence, Pie Chart, Gantt, and Class Diagram templates
+- **Zoom & Pan**: Interactive diagram navigation with zoom controls
+- **Fullscreen Mode**: Dedicated view for detailed diagram inspection
+- **Export Options**: Copy code to clipboard and download diagrams as SVG
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Touch Support**: Pan and pinch-to-zoom for mobile devices
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Getting Started
+
+### Prerequisites
+
+- Node.js (version 16 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/sravanth-space/mermaid.git
+cd mermaid
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+This creates a `dist` folder with the built application ready for deployment.
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## Usage
+
+1. **Edit Code**: Use the left panel to write or edit Mermaid diagram code
+2. **Quick Start**: Click any template button to load pre-built diagram examples
+3. **Navigate**: Use zoom controls to zoom in/out, reset view, or go fullscreen
+4. **Export**: Copy the code or download the diagram as SVG
+5. **Mobile**: Use touch gestures to pan and pinch-to-zoom on mobile devices
+
+## Technology Stack
+
+- **React 18**: Modern React with hooks
+- **Vite**: Fast build tool and development server
+- **Tailwind CSS**: Utility-first CSS framework
+- **Lucide React**: Beautiful icon library
+- **Mermaid.js**: Diagram generation library
+
+## Diagram Types Supported
+
+- Flowcharts
+- Sequence diagrams
+- Pie charts
+- Gantt charts
+- Class diagrams
+- And many more Mermaid diagram types
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
