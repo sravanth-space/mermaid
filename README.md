@@ -50,6 +50,14 @@ npm run build
 
 This creates a `dist` folder with the built application ready for deployment.
 
+### Deployment
+
+The application is automatically deployed to GitHub Pages at [mermaid.sravanth.co.uk](https://mermaid.sravanth.co.uk) when changes are pushed to the main branch. The deployment workflow:
+
+1. Builds the React application using Vite
+2. Deploys the static files to GitHub Pages
+3. Uses the custom domain configured in the CNAME file
+
 ### Preview Production Build
 
 ```bash
