@@ -118,10 +118,10 @@ const MermaidVisualizer = () => {
   const handleMouseDown = (e) => {
     if (e.button === 0) {
       // Left mouse button
-      setIsDragging(true);
       const pos = { x: e.clientX, y: e.clientY };
       setDragStart(pos);
       setDragLastPos(pos);
+      setIsDragging(true);
     }
   };
 
@@ -305,6 +305,29 @@ const MermaidVisualizer = () => {
       // Render the diagram
       const { svg } = await window.mermaid.render(id, code);
       diagramRef.current.innerHTML = svg;
+
+      // Prevent text selection on the SVG and all its children
+      const svgElement = diagramRef.current.querySelector("svg");
+      if (svgElement) {
+        svgElement.style.userSelect = "none";
+        svgElement.style.webkitUserSelect = "none";
+        svgElement.style.mozUserSelect = "none";
+        svgElement.style.msUserSelect = "none";
+        svgElement.setAttribute("unselectable", "on");
+
+        // Apply to all text elements in the SVG
+        const textElements = svgElement.querySelectorAll(
+          "text, tspan, textPath"
+        );
+        textElements.forEach((el) => {
+          el.style.userSelect = "none";
+          el.style.webkitUserSelect = "none";
+          el.style.mozUserSelect = "none";
+          el.style.msUserSelect = "none";
+          el.setAttribute("unselectable", "on");
+        });
+      }
+
       setError("");
     } catch (err) {
       setError(err.message || "Invalid Mermaid syntax");
@@ -486,7 +509,9 @@ const MermaidVisualizer = () => {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              style={{
+                cursor: isDragging ? "grabbing" : "grab",
+              }}
             >
               <div
                 ref={diagramRef}
@@ -496,6 +521,7 @@ const MermaidVisualizer = () => {
                   transformOrigin: "center center",
                 }}
               />
+
               {/* Pan indicator */}
               <div className="absolute top-2 left-2 bg-white bg-opacity-80 rounded px-2 py-1 text-xs text-gray-600">
                 <Move className="w-3 h-3 inline mr-1" />
