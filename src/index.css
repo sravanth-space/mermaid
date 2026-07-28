@@ -1,9 +1,19 @@
+/* Tailwind v4 - this single import replaces the v3 base/components/utilities
+   directives, which v4 rejects. */
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 body {
   margin: 0;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Dragging to pan would otherwise select the diagram's labels. Done in CSS so
+ * the rendered SVG needs no per-element post-processing after each render.
+ */
+.diagram-surface svg,
+.diagram-surface svg * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
