@@ -1,6 +1,6 @@
 # Mermaid Visualizer
 
-A beautiful React application for creating and visualizing Mermaid diagrams with an interactive editor and real-time preview.
+A beautiful React + TypeScript application for creating and visualizing Mermaid diagrams with an interactive editor and real-time preview.
 
 ![Mermaid Visualizer Screenshot](https://github.com/user-attachments/assets/4e8841cc-b850-40d8-94dc-827bb61c5b40)
 
@@ -19,8 +19,8 @@ A beautiful React application for creating and visualizing Mermaid diagrams with
 
 ### Prerequisites
 
-- Node.js (version 16 or higher)
-- npm or yarn
+- Node.js 22 (see `.nvmrc`)
+- yarn
 
 ### Installation
 
@@ -32,12 +32,12 @@ cd mermaid
 
 2. Install dependencies:
 ```bash
-npm install
+yarn install
 ```
 
 3. Start the development server:
 ```bash
-npm run dev
+yarn dev
 ```
 
 4. Open your browser and navigate to `http://localhost:5173`
@@ -45,10 +45,18 @@ npm run dev
 ### Building for Production
 
 ```bash
-npm run build
+yarn build
 ```
 
-This creates a `dist` folder with the built application ready for deployment.
+This type-checks the project (`tsc -b`) and then creates a `dist` folder with
+the built application ready for deployment.
+
+### Type Checking and Linting
+
+```bash
+yarn typecheck
+yarn lint
+```
 
 ### Deployment
 
@@ -61,7 +69,7 @@ The application is automatically deployed to GitHub Pages at [mermaid.sravanth.c
 ### Preview Production Build
 
 ```bash
-npm run preview
+yarn preview
 ```
 
 ## Usage
@@ -74,7 +82,8 @@ npm run preview
 
 ## Technology Stack
 
-- **React 18**: Modern React with hooks
+- **React 19**: Modern React with hooks
+- **TypeScript**: Type-safe components in strict mode
 - **Vite**: Fast build tool and development server
 - **Tailwind CSS**: Utility-first CSS framework
 - **Lucide React**: Beautiful icon library
