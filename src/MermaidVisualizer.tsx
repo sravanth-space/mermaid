@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import {
   Eye,
   Download,
@@ -16,6 +17,32 @@ import {
   Move,
 } from "lucide-react";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface Template {
+  name: string;
+  icon: ReactNode;
+  code: string;
+}
+
+/** Which zoom bound the user just bumped into, or "" when within range. */
+type ZoomLimit = "" | "min" | "max";
+
+/**
+ * Vendor-prefixed user-select properties are set via setProperty because the
+ * -moz- and -ms- variants are not part of the typed CSSStyleDeclaration.
+ */
+const disableSelection = (el: SVGElement) => {
+  el.style.userSelect = "none";
+  el.style.setProperty("-webkit-user-select", "none");
+  el.style.setProperty("-moz-user-select", "none");
+  el.style.setProperty("-ms-user-select", "none");
+  el.setAttribute("unselectable", "on");
+};
+
 const MermaidVisualizer = () => {
   const [code, setCode] = useState(`graph TD
     A[Start] --> B{Is it working?}
@@ -26,18 +53,17 @@ const MermaidVisualizer = () => {
 
   const [error, setError] = useState("");
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [dragLastPos, setDragLastPos] = useState({ x: 0, y: 0 });
+  const [dragLastPos, setDragLastPos] = useState<Point>({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPinching, setIsPinching] = useState(false);
   const [lastPinchDistance, setLastPinchDistance] = useState(0);
-  const [zoomLimitReached, setZoomLimitReached] = useState("");
-  const diagramRef = useRef(null);
-  const containerRef = useRef(null);
+  const [zoomLimitReached, setZoomLimitReached] = useState<ZoomLimit>("");
+  const diagramRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const templates = [
+  const templates: Template[] = [
     {
       name: "Flowchart",
       icon: <GitBranch className="w-4 h-4" />,
@@ -115,17 +141,15 @@ const MermaidVisualizer = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button === 0) {
       // Left mouse button
-      const pos = { x: e.clientX, y: e.clientY };
-      setDragStart(pos);
-      setDragLastPos(pos);
+      setDragLastPos({ x: e.clientX, y: e.clientY });
       setIsDragging(true);
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (isDragging) {
       const currentPos = { x: e.clientX, y: e.clientY };
       const deltaX = currentPos.x - dragLastPos.x;
@@ -144,7 +168,7 @@ const MermaidVisualizer = () => {
     setIsDragging(false);
   };
 
-  const handleWheel = (e) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault(); // Always prevent page zoom
     e.stopPropagation(); // Prevent event bubbling
 
@@ -171,7 +195,7 @@ const MermaidVisualizer = () => {
     setZoom(newZoom);
   };
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -187,13 +211,11 @@ const MermaidVisualizer = () => {
     } else if (e.touches.length === 1) {
       const touch = e.touches[0];
       setIsDragging(true);
-      const pos = { x: touch.clientX, y: touch.clientY };
-      setDragStart(pos);
-      setDragLastPos(pos);
+      setDragLastPos({ x: touch.clientX, y: touch.clientY });
     }
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -244,7 +266,7 @@ const MermaidVisualizer = () => {
     }
   };
 
-  const handleTouchEnd = (e) => {
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -281,18 +303,22 @@ const MermaidVisualizer = () => {
 
       // Load mermaid from CDN if not already loaded
       if (!window.mermaid) {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src =
             "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js";
-          script.onload = resolve;
-          script.onerror = reject;
+          script.onload = () => resolve();
+          script.onerror = () =>
+            reject(new Error("Failed to load Mermaid from CDN"));
           document.head.appendChild(script);
         });
       }
 
+      const mermaid = window.mermaid;
+      if (!mermaid) throw new Error("Mermaid failed to initialize");
+
       // Initialize mermaid
-      window.mermaid.initialize({
+      mermaid.initialize({
         startOnLoad: false,
         theme: "default",
         securityLevel: "loose",
@@ -303,39 +329,30 @@ const MermaidVisualizer = () => {
       const id = "diagram-" + Date.now();
 
       // Render the diagram
-      const { svg } = await window.mermaid.render(id, code);
+      const { svg } = await mermaid.render(id, code);
       diagramRef.current.innerHTML = svg;
 
       // Prevent text selection on the SVG and all its children
       const svgElement = diagramRef.current.querySelector("svg");
       if (svgElement) {
-        svgElement.style.userSelect = "none";
-        svgElement.style.webkitUserSelect = "none";
-        svgElement.style.mozUserSelect = "none";
-        svgElement.style.msUserSelect = "none";
-        svgElement.setAttribute("unselectable", "on");
+        disableSelection(svgElement);
 
         // Apply to all text elements in the SVG
-        const textElements = svgElement.querySelectorAll(
+        const textElements = svgElement.querySelectorAll<SVGElement>(
           "text, tspan, textPath"
         );
-        textElements.forEach((el) => {
-          el.style.userSelect = "none";
-          el.style.webkitUserSelect = "none";
-          el.style.mozUserSelect = "none";
-          el.style.msUserSelect = "none";
-          el.setAttribute("unselectable", "on");
-        });
+        textElements.forEach(disableSelection);
       }
 
       setError("");
     } catch (err) {
-      setError(err.message || "Invalid Mermaid syntax");
+      const message = err instanceof Error ? err.message : "";
+      setError(message || "Invalid Mermaid syntax");
       diagramRef.current.innerHTML = `<div class="flex items-center justify-center h-64 text-red-500 bg-red-50 rounded-lg border-2 border-red-200">
         <div class="text-center">
           <div class="text-lg font-semibold mb-2">Syntax Error</div>
           <div class="text-sm">${
-            err.message || "Please check your Mermaid syntax"
+            message || "Please check your Mermaid syntax"
           }</div>
         </div>
       </div>`;
@@ -343,7 +360,7 @@ const MermaidVisualizer = () => {
   };
 
   const downloadSVG = () => {
-    const svgElement = diagramRef.current.querySelector("svg");
+    const svgElement = diagramRef.current?.querySelector("svg");
     if (!svgElement) return;
 
     const svgData = new XMLSerializer().serializeToString(svgElement);
@@ -360,7 +377,7 @@ const MermaidVisualizer = () => {
     navigator.clipboard.writeText(code);
   };
 
-  const loadTemplate = (template) => {
+  const loadTemplate = (template: Template) => {
     setCode(template.code);
   };
 
