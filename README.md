@@ -6,12 +6,15 @@ A beautiful React + TypeScript application for creating and visualizing Mermaid 
 
 ## Features
 
-- **Interactive Code Editor**: Real-time editing of Mermaid diagram code
-- **Live Preview**: Instant diagram rendering with error handling
-- **Template Library**: Quick start with Flowchart, Sequence, Pie Chart, Gantt, and Class Diagram templates
+- **Code Editor**: CodeMirror with Mermaid syntax highlighting, line numbers, and a gutter marker on the line Mermaid rejected
+- **Live Preview**: Debounced rendering that keeps the last valid diagram on screen while you fix a syntax error
+- **Template Library**: Flowchart, Sequence, Pie Chart, Gantt, Class, State, ER, Journey, Mindmap and Git Graph
+- **Themes**: Default, Dark, Forest and Neutral, remembered between visits
 - **Zoom & Pan**: Interactive diagram navigation with zoom controls
 - **Fullscreen Mode**: Dedicated view for detailed diagram inspection
-- **Export Options**: Copy code to clipboard and download diagrams as SVG
+- **Export Options**: Copy the code, or download the diagram as SVG or PNG
+- **Shareable Links**: Copy a link that reopens the app with your diagram loaded
+- **Autosave**: Your work is kept in localStorage across reloads
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Touch Support**: Pan and pinch-to-zoom for mobile devices
 
@@ -51,12 +54,18 @@ yarn build
 This type-checks the project (`tsc -b`) and then creates a `dist` folder with
 the built application ready for deployment.
 
-### Type Checking and Linting
+### Type Checking, Linting and Tests
 
 ```bash
 yarn typecheck
 yarn lint
+yarn test         # single run
+yarn test:watch   # re-run on change
 ```
+
+Tests use Vitest with jsdom and React Testing Library, and live next to the
+code they cover as `*.test.ts(x)`. Mermaid itself is mocked in the component
+tests, so the suite stays fast and does not depend on SVG layout.
 
 ### Deployment
 
@@ -87,7 +96,9 @@ yarn preview
 - **Vite**: Fast build tool and development server
 - **Tailwind CSS**: Utility-first CSS framework
 - **Lucide React**: Beautiful icon library
-- **Mermaid.js**: Diagram generation library
+- **Mermaid.js**: Diagram generation library (v11, bundled and code-split)
+- **CodeMirror 6**: Editor with Mermaid syntax highlighting
+- **Vitest**: Test runner, with React Testing Library and jsdom
 
 ## Diagram Types Supported
 
