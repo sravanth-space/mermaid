@@ -11,8 +11,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/view": "^6.43.7",
     "@tailwindcss/postcss": "^4.1.13",
+    "@uiw/react-codemirror": "^4.25.11",
     "autoprefixer": "^10.4.21",
+    "codemirror-lang-mermaid": "^0.5.0",
     "lucide-react": "^0.542.0",
     "mermaid": "^11.16.0",
     "postcss": "^8.5.6",

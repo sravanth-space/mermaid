@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import {
   Eye,
   Download,
@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { DiagramPane } from "./components/DiagramPane";
+import { EditorFallback } from "./components/EditorFallback";
 import { ZoomControls } from "./components/ZoomControls";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import { useMermaidRender } from "./hooks/useMermaidRender";
@@ -23,6 +24,14 @@ import { DEFAULT_CODE, templates } from "./templates";
 import type { Template } from "./templates";
 import { isTheme, THEMES, THEME_LABELS } from "./themes";
 import type { Theme } from "./themes";
+
+/**
+ * CodeMirror and its Mermaid grammar are a few hundred kB, so the editor is
+ * split out of the app shell. EditorFallback keeps the pane usable meanwhile.
+ */
+const CodeEditor = lazy(() =>
+  import("./components/CodeEditor").then((m) => ({ default: m.CodeEditor }))
+);
 
 const CODE_STORAGE_KEY = "mermaid-visualizer:code";
 const THEME_STORAGE_KEY = "mermaid-visualizer:theme";
@@ -207,21 +216,12 @@ const MermaidVisualizer = () => {
                 </span>
               </div>
             </div>
-            <div className="p-4 h-full">
-              <textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full h-[calc(100%-2rem)] resize border rounded-lg p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                style={{
-                  maxWidth: "100%",
-                  minWidth: "100%",
-                  maxHeight: "calc(100% - 2rem)",
-                  minHeight: "100px",
-                }}
-                placeholder="Enter your Mermaid diagram code here..."
-                spellCheck={false}
-                aria-label="Mermaid diagram code"
-              />
+            <div className="p-4 h-[calc(100%-3.25rem)]">
+              <Suspense
+                fallback={<EditorFallback value={code} onChange={setCode} />}
+              >
+                <CodeEditor value={code} onChange={setCode} error={error} />
+              </Suspense>
             </div>
           </div>
 
