@@ -62,6 +62,7 @@ const MermaidVisualizer = () => {
   const [zoomLimitReached, setZoomLimitReached] = useState<ZoomLimit>("");
   const diagramRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
 
   const templates: Template[] = [
     {
@@ -168,7 +169,7 @@ const MermaidVisualizer = () => {
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = (e: WheelEvent) => {
     e.preventDefault(); // Always prevent page zoom
     e.stopPropagation(); // Prevent event bubbling
 
@@ -195,7 +196,7 @@ const MermaidVisualizer = () => {
     setZoom(newZoom);
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -215,7 +216,7 @@ const MermaidVisualizer = () => {
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchMove = (e: TouchEvent) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -266,7 +267,7 @@ const MermaidVisualizer = () => {
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchEnd = (e: TouchEvent) => {
     e.preventDefault(); // Prevent page zoom/scroll
     e.stopPropagation();
 
@@ -278,6 +279,39 @@ const MermaidVisualizer = () => {
       setIsDragging(false);
     }
   };
+
+  /*
+   * Wheel and touch listeners are registered here rather than as onWheel /
+   * onTouch* props because React attaches those at the root as passive
+   * listeners. preventDefault() is ignored inside a passive listener, so the
+   * browser zoomed the whole page instead of the diagram. Only
+   * addEventListener can opt out of passive.
+   *
+   * Re-registered whenever the handlers' state changes, so the listeners never
+   * close over a stale zoom or drag position.
+   */
+  useEffect(() => {
+    const panes = [containerRef.current, fullscreenRef.current].filter(
+      (pane): pane is HTMLDivElement => pane !== null
+    );
+    const options: AddEventListenerOptions = { passive: false };
+
+    for (const pane of panes) {
+      pane.addEventListener("wheel", handleWheel, options);
+      pane.addEventListener("touchstart", handleTouchStart, options);
+      pane.addEventListener("touchmove", handleTouchMove, options);
+      pane.addEventListener("touchend", handleTouchEnd, options);
+    }
+
+    return () => {
+      for (const pane of panes) {
+        pane.removeEventListener("wheel", handleWheel);
+        pane.removeEventListener("touchstart", handleTouchStart);
+        pane.removeEventListener("touchmove", handleTouchMove);
+        pane.removeEventListener("touchend", handleTouchEnd);
+      }
+    };
+  }, [zoom, isPinching, lastPinchDistance, isDragging, dragLastPos, isFullscreen]);
 
   useEffect(() => {
     if (isDragging) {
@@ -521,11 +555,7 @@ const MermaidVisualizer = () => {
             <div
               ref={containerRef}
               className="relative h-[calc(100%-4rem)] overflow-hidden bg-gray-50"
-              onWheel={handleWheel}
               onMouseDown={handleMouseDown}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
               style={{
                 cursor: isDragging ? "grabbing" : "grab",
               }}
@@ -603,12 +633,9 @@ const MermaidVisualizer = () => {
               </div>
             </div>
             <div
+              ref={fullscreenRef}
               className="flex-1 relative overflow-hidden bg-gray-50"
-              onWheel={handleWheel}
               onMouseDown={handleMouseDown}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
               style={{ cursor: isDragging ? "grabbing" : "grab" }}
             >
               <div
