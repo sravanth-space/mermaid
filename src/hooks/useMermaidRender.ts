@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type mermaidApi from "mermaid";
+import type { Theme } from "../themes";
 
 type Mermaid = typeof mermaidApi;
 
@@ -7,18 +8,10 @@ let mermaidPromise: Promise<Mermaid> | null = null;
 
 /**
  * Mermaid is several hundred kB, so it is imported on first render rather than
- * in the app shell. The promise is cached, so it initializes exactly once.
+ * in the app shell. The promise is cached, so the module loads exactly once.
  */
 const loadMermaid = (): Promise<Mermaid> => {
-  mermaidPromise ??= import("mermaid").then(({ default: mermaid }) => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-      securityLevel: "loose",
-      fontFamily: "inherit",
-    });
-    return mermaid;
-  });
+  mermaidPromise ??= import("mermaid").then(({ default: mermaid }) => mermaid);
   return mermaidPromise;
 };
 
@@ -33,13 +26,13 @@ export interface RenderResult {
 let renderId = 0;
 
 /**
- * Renders `code` to SVG markup.
+ * Renders `code` to SVG markup using the given theme.
  *
  * The previous good SVG is deliberately kept on screen when the definition is
  * invalid: mid-edit definitions are transiently unparseable, and blanking the
  * preview on every half-typed line is more disruptive than an error notice.
  */
-export const useMermaidRender = (code: string): RenderResult => {
+export const useMermaidRender = (code: string, theme: Theme): RenderResult => {
   const [result, setResult] = useState<RenderResult>({ svg: "", error: "" });
 
   useEffect(() => {
@@ -54,6 +47,18 @@ export const useMermaidRender = (code: string): RenderResult => {
 
       try {
         const mermaid = await loadMermaid();
+
+        // Re-initialised per render because the theme is baked into the output.
+        // securityLevel stays "strict": definitions can arrive from a shared
+        // link, and the result is injected as markup, so Mermaid must sanitise
+        // labels rather than pass HTML through.
+        mermaid.initialize({
+          startOnLoad: false,
+          theme,
+          securityLevel: "strict",
+          fontFamily: "inherit",
+        });
+
         // parse() validates without leaving stray nodes behind on failure.
         await mermaid.parse(code);
         const { svg } = await mermaid.render(`diagram-${++renderId}`, code);
@@ -69,7 +74,7 @@ export const useMermaidRender = (code: string): RenderResult => {
     return () => {
       stale = true;
     };
-  }, [code]);
+  }, [code, theme]);
 
   return result;
 };

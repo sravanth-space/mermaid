@@ -4,6 +4,11 @@ import {
   PieChart,
   Calendar,
   Network,
+  Workflow,
+  Database,
+  Route,
+  Brain,
+  GitMerge,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -78,5 +83,73 @@ export const templates: Template[] = [
         +bark()
     }
     Animal <|-- Dog`,
+  },
+  {
+    name: "State",
+    icon: <Workflow className="w-4 h-4" />,
+    code: `stateDiagram-v2
+    [*] --> Idle
+    Idle --> Loading : fetch
+    Loading --> Ready : success
+    Loading --> Failed : error
+    Failed --> Loading : retry
+    Ready --> [*]`,
+  },
+  {
+    name: "ER Diagram",
+    icon: <Database className="w-4 h-4" />,
+    code: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    PRODUCT ||--o{ LINE_ITEM : "ordered in"
+    CUSTOMER {
+        string name
+        string email
+    }
+    ORDER {
+        int id
+        date placedAt
+    }`,
+  },
+  {
+    name: "Journey",
+    icon: <Route className="w-4 h-4" />,
+    code: `journey
+    title Checkout Experience
+    section Browse
+      Find product: 5: Shopper
+      Read reviews: 4: Shopper
+    section Purchase
+      Add to basket: 5: Shopper
+      Enter payment: 2: Shopper
+      Confirm order: 4: Shopper, Support`,
+  },
+  {
+    name: "Mindmap",
+    icon: <Brain className="w-4 h-4" />,
+    code: `mindmap
+  root((Release Plan))
+    Scope
+      Must have
+      Nice to have
+    Risks
+      Migrations
+      Third party APIs
+    Rollout
+      Canary
+      Full`,
+  },
+  {
+    name: "Git Graph",
+    icon: <GitMerge className="w-4 h-4" />,
+    code: `gitGraph
+    commit id: "init"
+    branch feature
+    checkout feature
+    commit id: "wip"
+    commit id: "done"
+    checkout main
+    merge feature
+    commit id: "release"`,
   },
 ];

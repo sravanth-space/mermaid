@@ -1,41 +1,87 @@
-import { useState } from "react";
-import { Eye, Download, Copy, FileText, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Eye,
+  Download,
+  Copy,
+  FileText,
+  X,
+  Check,
+  Share2,
+  Palette,
+  Image as ImageIcon,
+} from "lucide-react";
 import { DiagramPane } from "./components/DiagramPane";
 import { ZoomControls } from "./components/ZoomControls";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import { useMermaidRender } from "./hooks/useMermaidRender";
 import { usePanZoom } from "./hooks/usePanZoom";
 import { usePersistentState } from "./hooks/usePersistentState";
+import { useTransientFlag } from "./hooks/useTransientFlag";
+import { downloadPng, downloadSvg } from "./lib/exportDiagram";
+import { buildShareUrl, clearSharedCode, readSharedCode } from "./lib/shareLink";
 import { DEFAULT_CODE, templates } from "./templates";
 import type { Template } from "./templates";
+import { isTheme, THEMES, THEME_LABELS } from "./themes";
+import type { Theme } from "./themes";
 
-const STORAGE_KEY = "mermaid-visualizer:code";
+const CODE_STORAGE_KEY = "mermaid-visualizer:code";
+const THEME_STORAGE_KEY = "mermaid-visualizer:theme";
 const RENDER_DEBOUNCE_MS = 300;
 
 const MermaidVisualizer = () => {
-  const [code, setCode] = usePersistentState(STORAGE_KEY, DEFAULT_CODE);
+  // Read once on mount, then drop it from the address bar so later edits are
+  // not misrepresented by a stale link.
+  const sharedCode = useMemo(() => {
+    const shared = readSharedCode();
+    if (shared) clearSharedCode();
+    return shared;
+  }, []);
+
+  const [code, setCode] = usePersistentState(
+    CODE_STORAGE_KEY,
+    (stored) => sharedCode ?? stored ?? DEFAULT_CODE
+  );
+  const [storedTheme, setStoredTheme] = usePersistentState(
+    THEME_STORAGE_KEY,
+    (stored) => (stored && isTheme(stored) ? stored : "default")
+  );
+  const theme: Theme = isTheme(storedTheme) ? storedTheme : "default";
+
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const [codeCopied, flagCodeCopied] = useTransientFlag();
+  const [linkCopied, flagLinkCopied] = useTransientFlag();
 
   const debouncedCode = useDebouncedValue(code, RENDER_DEBOUNCE_MS);
-  const { svg, error } = useMermaidRender(debouncedCode);
+  const { svg, error } = useMermaidRender(debouncedCode, theme);
   const panZoom = usePanZoom();
 
   const toggleFullscreen = () => setIsFullscreen((prev) => !prev);
 
-  const downloadSVG = () => {
-    if (!svg) return;
-
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "diagram.svg";
-    link.click();
-    URL.revokeObjectURL(url);
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(code);
+    flagCodeCopied();
   };
 
-  const copyCode = () => {
-    void navigator.clipboard.writeText(code);
+  const copyShareLink = async () => {
+    await navigator.clipboard.writeText(buildShareUrl(code));
+    flagLinkCopied();
+  };
+
+  const exportSvg = () => {
+    setExportError("");
+    downloadSvg(svg);
+  };
+
+  const exportPng = async () => {
+    setExportError("");
+    try {
+      await downloadPng(svg);
+    } catch (err) {
+      setExportError(
+        err instanceof Error ? err.message : "Could not export as PNG"
+      );
+    }
   };
 
   const loadTemplate = (template: Template) => {
@@ -47,7 +93,7 @@ const MermaidVisualizer = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Eye className="w-5 h-5 text-white" />
@@ -56,24 +102,74 @@ const MermaidVisualizer = () => {
                 Mermaid Visualizer
               </h1>
             </div>
-            <div className="flex items-center space-x-2">
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="flex items-center gap-1.5 px-2 py-1.5 text-sm bg-gray-100 rounded-lg">
+                <Palette className="w-4 h-4 text-gray-500" />
+                <span className="sr-only">Diagram theme</span>
+                <select
+                  value={theme}
+                  onChange={(e) => setStoredTheme(e.target.value)}
+                  className="bg-transparent text-sm focus:outline-none cursor-pointer"
+                >
+                  {THEMES.map((name) => (
+                    <option key={name} value={name}>
+                      {THEME_LABELS[name]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <button
-                onClick={copyCode}
+                onClick={() => void copyCode()}
                 className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                <Copy className="w-4 h-4" />
-                <span>Copy Code</span>
+                {codeCopied ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                <span>{codeCopied ? "Copied!" : "Copy Code"}</span>
               </button>
+
               <button
-                onClick={downloadSVG}
+                onClick={() => void copyShareLink()}
+                title="Copy a link that reopens this diagram"
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                {linkCopied ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Share2 className="w-4 h-4" />
+                )}
+                <span>{linkCopied ? "Link copied!" : "Share"}</span>
+              </button>
+
+              <button
+                onClick={exportSvg}
                 disabled={!svg}
                 className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Download SVG</span>
+                <span>SVG</span>
+              </button>
+
+              <button
+                onClick={() => void exportPng()}
+                disabled={!svg}
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>PNG</span>
               </button>
             </div>
           </div>
+
+          {exportError && (
+            <div className="mt-2 text-xs text-red-600" role="alert">
+              {exportError}
+            </div>
+          )}
         </div>
       </div>
 
